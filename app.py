@@ -63,6 +63,7 @@ NORMALIZATION_MAP = {
     "BACKEND DEVELOPER": "WEB DEVELOPMENT",
     "FULL STACK": "WEB DEVELOPMENT",
     "FULL STACK DEVELOPER": "WEB DEVELOPMENT",
+    "FRONTEND OR BACKEND DEVELOPER": "WEB DEVELOPMENT",
     "FULL STACK WEB DEVELOPMENT": "WEB DEVELOPMENT",
 
     # GAME
@@ -232,6 +233,7 @@ else:
 # ----------------------------------
 with st.expander("VIEW RAW DATA"):
     st.dataframe(df)
+
 
 
 
