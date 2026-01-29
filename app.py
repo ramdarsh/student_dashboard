@@ -40,14 +40,30 @@ NORMALIZATION_MAP = {
     "Ai/ML": "AI/ML",
     "AI/ml": "AI/ML",
     "ai/ml": "AI/ML",
+
     "cloud computing": "CLOUD COMPUTING",
     "Cloud computing": "CLOUD COMPUTING",
+
     "Cyber security": "CYBER SECURITY",
+    "CYBER SECURITY": "CYBER SECURITY",
+
     "Web developer": "WEB DEVELOPMENT",
+    "WEB DEVELOPER": "WEB DEVELOPMENT",
+
     "Game developer": "GAME DEVELOPMENT",
+    "GAME DEVELOPER": "GAME DEVELOPMENT",
+
     "Data analyst": "DATA ANALYTICS",
-    "Big Data": "BIG DATA"
+    "Data Analyst": "DATA ANALYTICS",
+    "DATA ANALYST": "DATA ANALYTICS",
+
+    "Data analytics": "DATA ANALYTICS",
+    "DATA ANALYTICS": "DATA ANALYTICS",
+
+    "Big Data": "BIG DATA",
+    "BIG DATA": "BIG DATA"
 }
+
 
 # ----------------------------------
 # BUILD STUDENT → INTEREST MAPPING
@@ -187,5 +203,6 @@ else:
 # ----------------------------------
 with st.expander("VIEW RAW DATA"):
     st.dataframe(df)
+
 
 
