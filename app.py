@@ -111,27 +111,46 @@ with col2:
     st.metric("TOTAL UNIQUE INTERESTS", interest_counts["INTEREST"].nunique())
 
 # ----------------------------------
-# BAR CHART
+# CHARTS SECTION
 # ----------------------------------
+st.subheader("📊 INTEREST DISTRIBUTION")
+
 if selected_interest == "ALL":
     chart_data = interest_counts
 else:
     chart_data = interest_counts[interest_counts["INTEREST"] == selected_interest]
 
-fig = px.bar(
+col_bar, col_pie = st.columns(2)
+
+# ---- BAR CHART ----
+fig_bar = px.bar(
     chart_data,
     x="INTEREST",
     y="STUDENT COUNT",
     text="STUDENT COUNT",
-    title="STUDENT INTEREST DISTRIBUTION"
+    title="STUDENT INTEREST COUNT"
 )
 
-fig.update_layout(
+fig_bar.update_layout(
     xaxis_title="INTEREST",
-    yaxis_title="NUMBER OF STUDENTS"
+    yaxis_title="NUMBER OF STUDENTS",
+    xaxis_tickangle=-45
 )
 
-st.plotly_chart(fig, use_container_width=True)
+col_bar.plotly_chart(fig_bar, use_container_width=True)
+
+# ---- PIE CHART ----
+fig_pie = px.pie(
+    interest_counts if selected_interest == "ALL" else chart_data,
+    names="INTEREST",
+    values="STUDENT COUNT",
+    title="ROLE DISTRIBUTION (PERCENTAGE)",
+    hole=0.4
+)
+
+fig_pie.update_traces(textposition="inside", textinfo="percent+label")
+
+col_pie.plotly_chart(fig_pie, use_container_width=True)
 
 # ----------------------------------
 # STUDENT DETAILS FOR SELECTED ROLE
