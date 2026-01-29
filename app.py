@@ -2,19 +2,19 @@ import pandas as pd
 import streamlit as st
 import plotly.express as px
 
-# ----------------------------
-# Page config
-# ----------------------------
+# ----------------------------------
+# PAGE CONFIG
+# ----------------------------------
 st.set_page_config(
-    page_title="Student Interest Dashboard",
+    page_title="STUDENT INTEREST DASHBOARD",
     layout="wide"
 )
 
-st.title("🎓 Student Area of Interest Dashboard")
+st.title("🎓 STUDENT AREA OF INTEREST DASHBOARD")
 
-# ----------------------------
-# Load data
-# ----------------------------
+# ----------------------------------
+# LOAD DATA
+# ----------------------------------
 @st.cache_data
 def load_data():
     df = pd.read_csv("student_interests.csv")
@@ -22,97 +22,110 @@ def load_data():
 
 df = load_data()
 
-# ----------------------------
-# Combine interest columns
-# ----------------------------
-interest_cols = [
+# ----------------------------------
+# CLEAN & FORMAT DATA
+# ----------------------------------
+df["NAME"] = df["Name"].str.upper()
+
+INTEREST_COLUMNS = [
     "Area_of_Interest_1",
     "Area_of_Interest_2",
     "Area_of_Interest_3",
     "Mention_Other_Area"
 ]
 
-all_interests = []
+ALL_INTERESTS = []
 
-for col in interest_cols:
+for col in INTEREST_COLUMNS:
     df[col] = df[col].fillna("")
-    for val in df[col]:
-        for item in val.split(","):
+    for value in df[col]:
+        for item in str(value).split(","):
             item = item.strip()
             if item:
-                all_interests.append(item)
+                ALL_INTERESTS.append(item)
 
-interest_df = pd.DataFrame(all_interests, columns=["Interest"])
+interest_df = pd.DataFrame(ALL_INTERESTS, columns=["INTEREST"])
 
-# ----------------------------
-# Normalize labels (critical)
-# ----------------------------
-normalization_map = {
+# ----------------------------------
+# NORMALIZE INTEREST NAMES
+# ----------------------------------
+NORMALIZATION_MAP = {
     "Ai/ML": "AI/ML",
     "AI/ml": "AI/ML",
     "ai/ml": "AI/ML",
-    "cloud computing": "Cloud Computing",
-    "Cloud computing": "Cloud Computing",
-    "Cyber security": "Cyber Security",
-    "Web developer": "Web Development",
-    "Game developer": "Game Development",
-    "Data analyst": "Data Analytics",
-    "Big Data": "Big Data"
+    "cloud computing": "CLOUD COMPUTING",
+    "Cloud computing": "CLOUD COMPUTING",
+    "Cyber security": "CYBER SECURITY",
+    "Web developer": "WEB DEVELOPMENT",
+    "Game developer": "GAME DEVELOPMENT",
+    "Data analyst": "DATA ANALYTICS",
+    "Big Data": "BIG DATA"
 }
 
-interest_df["Interest"] = interest_df["Interest"].replace(normalization_map)
+interest_df["INTEREST"] = (
+    interest_df["INTEREST"]
+    .replace(NORMALIZATION_MAP)
+    .str.upper()
+)
 
-# ----------------------------
-# Count interests
-# ----------------------------
+# ----------------------------------
+# COUNT INTERESTS
+# ----------------------------------
 interest_counts = (
-    interest_df["Interest"]
+    interest_df["INTEREST"]
     .value_counts()
     .reset_index()
 )
-interest_counts.columns = ["Interest", "Student Count"]
 
-# ----------------------------
-# Sidebar filter
-# ----------------------------
-selected_interest = st.sidebar.multiselect(
-    "Filter by Interest",
-    options=interest_counts["Interest"].unique(),
-    default=interest_counts["Interest"].unique()
+interest_counts.columns = ["INTEREST", "STUDENT COUNT"]
+
+# ----------------------------------
+# SIDEBAR FILTER
+# ----------------------------------
+st.sidebar.header("FILTER OPTIONS")
+
+selected_interests = st.sidebar.multiselect(
+    "FILTER BY INTEREST",
+    options=interest_counts["INTEREST"].unique(),
+    default=interest_counts["INTEREST"].unique()
 )
 
 filtered_counts = interest_counts[
-    interest_counts["Interest"].isin(selected_interest)
+    interest_counts["INTEREST"].isin(selected_interests)
 ]
 
-# ----------------------------
-# KPI metrics
-# ----------------------------
+# ----------------------------------
+# METRICS
+# ----------------------------------
 col1, col2 = st.columns(2)
 
 with col1:
-    st.metric("Total Students", df["Name"].nunique())
+    st.metric("TOTAL STUDENTS", df["NAME"].nunique())
 
 with col2:
-    st.metric("Total Unique Interests", interest_df["Interest"].nunique())
+    st.metric("TOTAL UNIQUE INTERESTS", interest_df["INTEREST"].nunique())
 
-# ----------------------------
-# Bar chart
-# ----------------------------
+# ----------------------------------
+# BAR CHART
+# ----------------------------------
 fig = px.bar(
     filtered_counts,
-    x="Interest",
-    y="Student Count",
-    text="Student Count",
-    title="Student Interest Distribution",
+    x="INTEREST",
+    y="STUDENT COUNT",
+    text="STUDENT COUNT",
+    title="STUDENT INTEREST DISTRIBUTION"
 )
 
-fig.update_layout(xaxis_tickangle=-45)
+fig.update_layout(
+    xaxis_title="INTEREST",
+    yaxis_title="NUMBER OF STUDENTS",
+    xaxis_tickangle=-45
+)
 
 st.plotly_chart(fig, use_container_width=True)
 
-# ----------------------------
-# Raw table (optional)
-# ----------------------------
-with st.expander("View Raw Data"):
+# ----------------------------------
+# RAW DATA VIEW
+# ----------------------------------
+with st.expander("VIEW RAW STUDENT DATA"):
     st.dataframe(df)
