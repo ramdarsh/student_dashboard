@@ -37,32 +37,41 @@ INTEREST_COLUMNS = [
 # NORMALIZATION MAP
 # ----------------------------------
 NORMALIZATION_MAP = {
+    # AI / ML
     "Ai/ML": "AI/ML",
     "AI/ml": "AI/ML",
     "ai/ml": "AI/ML",
 
+    # CLOUD
     "cloud computing": "CLOUD COMPUTING",
     "Cloud computing": "CLOUD COMPUTING",
 
+    # CYBER
     "Cyber security": "CYBER SECURITY",
     "CYBER SECURITY": "CYBER SECURITY",
 
+    # WEB
     "Web developer": "WEB DEVELOPMENT",
     "WEB DEVELOPER": "WEB DEVELOPMENT",
 
+    # GAME (UPDATED)
     "Game developer": "GAME DEVELOPMENT",
     "GAME DEVELOPER": "GAME DEVELOPMENT",
+    "Game Designer": "GAME DEVELOPMENT",
+    "GAME DESIGNER": "GAME DEVELOPMENT",
 
+    # DATA (MERGED)
     "Data analyst": "DATA ANALYTICS",
     "Data Analyst": "DATA ANALYTICS",
     "DATA ANALYST": "DATA ANALYTICS",
-
     "Data analytics": "DATA ANALYTICS",
     "DATA ANALYTICS": "DATA ANALYTICS",
 
+    # BIG DATA
     "Big Data": "BIG DATA",
     "BIG DATA": "BIG DATA"
 }
+
 
 
 # ----------------------------------
@@ -203,6 +212,7 @@ else:
 # ----------------------------------
 with st.expander("VIEW RAW DATA"):
     st.dataframe(df)
+
 
 
 
