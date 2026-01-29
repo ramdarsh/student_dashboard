@@ -54,25 +54,29 @@ NORMALIZATION_MAP = {
     "Web developer": "WEB DEVELOPMENT",
     "WEB DEVELOPER": "WEB DEVELOPMENT",
 
-    # GAME (UPDATED)
+    # GAME
     "Game developer": "GAME DEVELOPMENT",
     "GAME DEVELOPER": "GAME DEVELOPMENT",
     "Game Designer": "GAME DEVELOPMENT",
     "GAME DESIGNER": "GAME DEVELOPMENT",
 
-    # DATA (MERGED)
+    # DATA
     "Data analyst": "DATA ANALYTICS",
     "Data Analyst": "DATA ANALYTICS",
     "DATA ANALYST": "DATA ANALYTICS",
     "Data analytics": "DATA ANALYTICS",
     "DATA ANALYTICS": "DATA ANALYTICS",
 
+    # SOFTWARE DEV (NEW)
+    "SDE": "SOFTWARE DEVELOPMENT",
+    "SOFTWARE DEVELOPER": "SOFTWARE DEVELOPMENT",
+    "SOFTWARE ENGINEER": "SOFTWARE DEVELOPMENT",
+    "SOFTWARE DEVELOPMENT ENGINEER": "SOFTWARE DEVELOPMENT",
+
     # BIG DATA
     "Big Data": "BIG DATA",
     "BIG DATA": "BIG DATA"
 }
-
-
 
 # ----------------------------------
 # BUILD STUDENT → INTEREST MAPPING
@@ -212,6 +216,7 @@ else:
 # ----------------------------------
 with st.expander("VIEW RAW DATA"):
     st.dataframe(df)
+
 
 
 
