@@ -77,8 +77,8 @@ NORMALIZATION_MAP = {
     "DATA ANALYST": "DATA ANALYTICS",
     "Data analytics": "DATA ANALYTICS",
     "DATA ANALYTICS": "DATA ANALYTICS",
-    "DATA SCIENTIST": "DATA ANALYTICS / AI",
-    "Data scientist": "DATA ANALYTICS / AI",
+    "DATA SCIENTIST": "DATA SCIENTIST",
+    "Data scientist": "DATA SCIENTIST",
 
     # SOFTWARE DEVELOPMENT (MERGED)
     "SDE": "SOFTWARE DEVELOPMENT",
@@ -232,6 +232,7 @@ else:
 # ----------------------------------
 with st.expander("VIEW RAW DATA"):
     st.dataframe(df)
+
 
 
 
