@@ -17,13 +17,12 @@ st.title("🎓 STUDENT AREA OF INTEREST DASHBOARD")
 # ----------------------------------
 @st.cache_data
 def load_data():
-    df = pd.read_csv("student_interests.csv")
-    return df
+    return pd.read_csv("student_interests.csv")
 
 df = load_data()
 
 # ----------------------------------
-# CLEAN & FORMAT DATA
+# FORMAT NAMES
 # ----------------------------------
 df["NAME"] = df["Name"].str.upper()
 
@@ -34,20 +33,8 @@ INTEREST_COLUMNS = [
     "Mention_Other_Area"
 ]
 
-ALL_INTERESTS = []
-
-for col in INTEREST_COLUMNS:
-    df[col] = df[col].fillna("")
-    for value in df[col]:
-        for item in str(value).split(","):
-            item = item.strip()
-            if item:
-                ALL_INTERESTS.append(item)
-
-interest_df = pd.DataFrame(ALL_INTERESTS, columns=["INTEREST"])
-
 # ----------------------------------
-# NORMALIZE INTEREST NAMES
+# NORMALIZATION MAP
 # ----------------------------------
 NORMALIZATION_MAP = {
     "Ai/ML": "AI/ML",
@@ -62,17 +49,40 @@ NORMALIZATION_MAP = {
     "Big Data": "BIG DATA"
 }
 
-interest_df["INTEREST"] = (
-    interest_df["INTEREST"]
-    .replace(NORMALIZATION_MAP)
-    .str.upper()
-)
+# ----------------------------------
+# BUILD STUDENT → INTEREST MAPPING
+# ----------------------------------
+student_interest_rows = []
+
+for _, row in df.iterrows():
+    interests = []
+
+    for col in INTEREST_COLUMNS:
+        value = str(row[col]) if pd.notna(row[col]) else ""
+        for item in value.split(","):
+            item = item.strip()
+            if item:
+                item = NORMALIZATION_MAP.get(item, item).upper()
+                interests.append(item)
+
+    student_interest_rows.append({
+        "NAME": row["NAME"],
+        "INTERESTS": ", ".join(sorted(set(interests)))
+    })
+
+student_interest_df = pd.DataFrame(student_interest_rows)
 
 # ----------------------------------
-# COUNT INTERESTS
+# CREATE INTEREST COUNT DATA
 # ----------------------------------
+all_interests = []
+
+for interests in student_interest_df["INTERESTS"]:
+    for i in interests.split(","):
+        all_interests.append(i.strip())
+
 interest_counts = (
-    interest_df["INTEREST"]
+    pd.Series(all_interests)
     .value_counts()
     .reset_index()
 )
@@ -84,15 +94,10 @@ interest_counts.columns = ["INTEREST", "STUDENT COUNT"]
 # ----------------------------------
 st.sidebar.header("FILTER OPTIONS")
 
-selected_interests = st.sidebar.multiselect(
-    "FILTER BY INTEREST",
-    options=interest_counts["INTEREST"].unique(),
-    default=interest_counts["INTEREST"].unique()
+selected_interest = st.sidebar.selectbox(
+    "SELECT ROLE / INTEREST",
+    options=["ALL"] + interest_counts["INTEREST"].tolist()
 )
-
-filtered_counts = interest_counts[
-    interest_counts["INTEREST"].isin(selected_interests)
-]
 
 # ----------------------------------
 # METRICS
@@ -100,16 +105,21 @@ filtered_counts = interest_counts[
 col1, col2 = st.columns(2)
 
 with col1:
-    st.metric("TOTAL STUDENTS", df["NAME"].nunique())
+    st.metric("TOTAL STUDENTS", student_interest_df["NAME"].nunique())
 
 with col2:
-    st.metric("TOTAL UNIQUE INTERESTS", interest_df["INTEREST"].nunique())
+    st.metric("TOTAL UNIQUE INTERESTS", interest_counts["INTEREST"].nunique())
 
 # ----------------------------------
 # BAR CHART
 # ----------------------------------
+if selected_interest == "ALL":
+    chart_data = interest_counts
+else:
+    chart_data = interest_counts[interest_counts["INTEREST"] == selected_interest]
+
 fig = px.bar(
-    filtered_counts,
+    chart_data,
     x="INTEREST",
     y="STUDENT COUNT",
     text="STUDENT COUNT",
@@ -118,14 +128,32 @@ fig = px.bar(
 
 fig.update_layout(
     xaxis_title="INTEREST",
-    yaxis_title="NUMBER OF STUDENTS",
-    xaxis_tickangle=-45
+    yaxis_title="NUMBER OF STUDENTS"
 )
 
 st.plotly_chart(fig, use_container_width=True)
 
 # ----------------------------------
+# STUDENT DETAILS FOR SELECTED ROLE
+# ----------------------------------
+st.subheader("👨‍🎓 STUDENT DETAILS")
+
+if selected_interest == "ALL":
+    st.info("SELECT A ROLE FROM THE SIDEBAR TO VIEW STUDENT DETAILS.")
+else:
+    filtered_students = student_interest_df[
+        student_interest_df["INTERESTS"].str.contains(selected_interest, case=False)
+    ]
+
+    st.write(f"TOTAL STUDENTS INTERESTED IN {selected_interest}: {len(filtered_students)}")
+
+    st.dataframe(
+        filtered_students.reset_index(drop=True),
+        use_container_width=True
+    )
+
+# ----------------------------------
 # RAW DATA VIEW
 # ----------------------------------
-with st.expander("VIEW RAW STUDENT DATA"):
+with st.expander("VIEW RAW DATA"):
     st.dataframe(df)
