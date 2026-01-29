@@ -98,6 +98,17 @@ selected_interest = st.sidebar.selectbox(
     "SELECT ROLE / INTEREST",
     options=["ALL"] + interest_counts["INTEREST"].tolist()
 )
+# ----------------------------------
+# SIDEBAR: STUDENT COUNT BY INTEREST
+# ----------------------------------
+st.sidebar.markdown("### 📌 STUDENT COUNT BY INTEREST")
+
+for _, row in interest_counts.iterrows():
+    st.sidebar.metric(
+        label=row["INTEREST"],
+        value=row["STUDENT COUNT"]
+    )
+
 
 # ----------------------------------
 # METRICS
@@ -109,21 +120,6 @@ with col1:
 
 with col2:
     st.metric("TOTAL UNIQUE INTERESTS", interest_counts["INTEREST"].nunique())
-
-# ----------------------------------
-# BOLD STUDENT COUNT BY INTEREST
-# ----------------------------------
-st.subheader("📌 STUDENT COUNT BY AREA OF INTEREST")
-
-# SHOW IN ROWS OF 4 CARDS
-cols = st.columns(4)
-
-for idx, row in interest_counts.iterrows():
-    with cols[idx % 4]:
-        st.metric(
-            label=row["INTEREST"],
-            value=row["STUDENT COUNT"]
-        )
 
 # ----------------------------------
 # CHARTS SECTION
@@ -191,4 +187,5 @@ else:
 # ----------------------------------
 with st.expander("VIEW RAW DATA"):
     st.dataframe(df)
+
 
