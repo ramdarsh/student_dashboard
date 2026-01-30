@@ -10,6 +10,26 @@ st.set_page_config(
     layout="wide"
 )
 
+# ----------------------------------
+# MOBILE RESPONSIVE CSS
+# ----------------------------------
+st.markdown("""
+<style>
+@media (max-width: 768px) {
+    .block-container {
+        padding-left: 1rem;
+        padding-right: 1rem;
+    }
+    h1, h2, h3 {
+        font-size: 1.1rem !important;
+    }
+}
+[data-testid="stDataFrame"] {
+    overflow-x: auto;
+}
+</style>
+""", unsafe_allow_html=True)
+
 st.title("🎓 STUDENT AREA OF INTEREST DASHBOARD")
 
 # ----------------------------------
@@ -21,9 +41,6 @@ def load_data():
 
 df = load_data()
 
-# ----------------------------------
-# FORMAT NAMES
-# ----------------------------------
 df["NAME"] = df["Name"].str.upper()
 
 INTEREST_COLUMNS = [
@@ -34,7 +51,7 @@ INTEREST_COLUMNS = [
 ]
 
 # ----------------------------------
-# NORMALIZATION MAP
+# FINAL NORMALIZATION MAP
 # ----------------------------------
 NORMALIZATION_MAP = {
     # AI / ML
@@ -54,22 +71,16 @@ NORMALIZATION_MAP = {
     "Cyber security": "CYBER SECURITY",
     "CYBER SECURITY": "CYBER SECURITY",
 
-    # WEB (FINAL – FRONTEND & BACKEND MERGED)
+    # WEB
     "Web developer": "WEB DEVELOPMENT",
     "WEB DEVELOPER": "WEB DEVELOPMENT",
-
     "FRONTEND": "WEB DEVELOPMENT",
     "FRONTEND DEVELOPER": "WEB DEVELOPMENT",
-    "FRONT END": "WEB DEVELOPMENT",
-    "FRONT END DEVELOPER": "WEB DEVELOPMENT",
-
     "BACKEND": "WEB DEVELOPMENT",
     "BACKEND DEVELOPER": "WEB DEVELOPMENT",
-    "BACK END": "WEB DEVELOPMENT",
-    "BACK END DEVELOPER": "WEB DEVELOPMENT",
-
+    "FULL STACK": "WEB DEVELOPMENT",
+    "FULL STACK DEVELOPER": "WEB DEVELOPMENT",
     "FRONTEND OR BACKEND DEVELOPER": "WEB DEVELOPMENT",
-    "FRONTEND / BACKEND": "WEB DEVELOPMENT",
 
     # GAME
     "Game developer": "GAME DEVELOPMENT",
@@ -77,16 +88,16 @@ NORMALIZATION_MAP = {
     "Game Designer": "GAME DEVELOPMENT",
     "GAME DESIGNER": "GAME DEVELOPMENT",
 
-    # DATA (MERGED)
+    # DATA
     "Data analyst": "DATA ANALYTICS",
     "Data Analyst": "DATA ANALYTICS",
     "DATA ANALYST": "DATA ANALYTICS",
     "Data analytics": "DATA ANALYTICS",
     "DATA ANALYTICS": "DATA ANALYTICS",
-    "DATA SCIENTIST": "DATA SCIENTIST",
-    "Data scientist": "DATA SCIENTIST",
+    "Data scientist": "DATA ANALYTICS / AI",
+    "DATA SCIENTIST": "DATA ANALYTICS / AI",
 
-    # SOFTWARE DEVELOPMENT (MERGED)
+    # SOFTWARE DEV
     "SDE": "SOFTWARE DEVELOPMENT",
     "JR SDE": "SOFTWARE DEVELOPMENT",
     "Jr SDE": "SOFTWARE DEVELOPMENT",
@@ -99,11 +110,10 @@ NORMALIZATION_MAP = {
     "BIG DATA": "BIG DATA"
 }
 
-
 # ----------------------------------
 # BUILD STUDENT → INTEREST MAPPING
 # ----------------------------------
-student_interest_rows = []
+rows = []
 
 for _, row in df.iterrows():
     interests = []
@@ -116,15 +126,15 @@ for _, row in df.iterrows():
                 item = NORMALIZATION_MAP.get(item, item).upper()
                 interests.append(item)
 
-    student_interest_rows.append({
+    rows.append({
         "NAME": row["NAME"],
         "INTERESTS": ", ".join(sorted(set(interests)))
     })
 
-student_interest_df = pd.DataFrame(student_interest_rows)
+student_interest_df = pd.DataFrame(rows)
 
 # ----------------------------------
-# CREATE INTEREST COUNT DATA
+# INTEREST COUNTS
 # ----------------------------------
 all_interests = []
 
@@ -141,7 +151,7 @@ interest_counts = (
 interest_counts.columns = ["INTEREST", "STUDENT COUNT"]
 
 # ----------------------------------
-# SIDEBAR FILTER
+# SIDEBAR CONTROLS
 # ----------------------------------
 st.sidebar.header("FILTER OPTIONS")
 
@@ -149,9 +159,8 @@ selected_interest = st.sidebar.selectbox(
     "SELECT ROLE / INTEREST",
     options=["ALL"] + interest_counts["INTEREST"].tolist()
 )
-# ----------------------------------
-# SIDEBAR: STUDENT COUNT BY INTEREST
-# ----------------------------------
+
+st.sidebar.divider()
 st.sidebar.markdown("### 📌 STUDENT COUNT BY INTEREST")
 
 for _, row in interest_counts.iterrows():
@@ -160,6 +169,7 @@ for _, row in interest_counts.iterrows():
         value=row["STUDENT COUNT"]
     )
 
+is_mobile = st.sidebar.toggle("MOBILE VIEW", value=False)
 
 # ----------------------------------
 # METRICS
@@ -173,49 +183,50 @@ with col2:
     st.metric("TOTAL UNIQUE INTERESTS", interest_counts["INTEREST"].nunique())
 
 # ----------------------------------
-# CHARTS SECTION
+# CHART DATA
+# ----------------------------------
+chart_data = interest_counts if selected_interest == "ALL" else \
+    interest_counts[interest_counts["INTEREST"] == selected_interest]
+
+# ----------------------------------
+# CHARTS
 # ----------------------------------
 st.subheader("📊 INTEREST DISTRIBUTION")
 
-if selected_interest == "ALL":
-    chart_data = interest_counts
+if is_mobile:
+    bar_container = st.container()
+    pie_container = st.container()
 else:
-    chart_data = interest_counts[interest_counts["INTEREST"] == selected_interest]
+    bar_container, pie_container = st.columns(2)
 
-col_bar, col_pie = st.columns(2)
+with bar_container:
+    fig_bar = px.bar(
+        chart_data,
+        x="INTEREST",
+        y="STUDENT COUNT",
+        text="STUDENT COUNT",
+        title="STUDENT INTEREST COUNT"
+    )
+    fig_bar.update_layout(
+        xaxis_title="INTEREST",
+        yaxis_title="NUMBER OF STUDENTS",
+        xaxis_tickangle=-45
+    )
+    st.plotly_chart(fig_bar, use_container_width=True)
 
-# ---- BAR CHART ----
-fig_bar = px.bar(
-    chart_data,
-    x="INTEREST",
-    y="STUDENT COUNT",
-    text="STUDENT COUNT",
-    title="STUDENT INTEREST COUNT"
-)
-
-fig_bar.update_layout(
-    xaxis_title="INTEREST",
-    yaxis_title="NUMBER OF STUDENTS",
-    xaxis_tickangle=-45
-)
-
-col_bar.plotly_chart(fig_bar, use_container_width=True)
-
-# ---- PIE CHART ----
-fig_pie = px.pie(
-    interest_counts if selected_interest == "ALL" else chart_data,
-    names="INTEREST",
-    values="STUDENT COUNT",
-    title="ROLE DISTRIBUTION (PERCENTAGE)",
-    hole=0.4
-)
-
-fig_pie.update_traces(textposition="inside", textinfo="percent+label")
-
-col_pie.plotly_chart(fig_pie, use_container_width=True)
+with pie_container:
+    fig_pie = px.pie(
+        interest_counts if selected_interest == "ALL" else chart_data,
+        names="INTEREST",
+        values="STUDENT COUNT",
+        title="ROLE DISTRIBUTION (PERCENTAGE)",
+        hole=0.4
+    )
+    fig_pie.update_traces(textinfo="percent+label")
+    st.plotly_chart(fig_pie, use_container_width=True)
 
 # ----------------------------------
-# STUDENT DETAILS FOR SELECTED ROLE
+# STUDENT DETAILS
 # ----------------------------------
 st.subheader("👨‍🎓 STUDENT DETAILS")
 
@@ -226,24 +237,18 @@ else:
         student_interest_df["INTERESTS"].str.contains(selected_interest, case=False)
     ]
 
-    st.write(f"TOTAL STUDENTS INTERESTED IN {selected_interest}: {len(filtered_students)}")
+    st.write(
+        f"TOTAL STUDENTS INTERESTED IN {selected_interest}: {len(filtered_students)}"
+    )
 
     st.dataframe(
         filtered_students.reset_index(drop=True),
-        use_container_width=True
+        use_container_width=True,
+        height=300
     )
 
 # ----------------------------------
-# RAW DATA VIEW
+# RAW DATA
 # ----------------------------------
 with st.expander("VIEW RAW DATA"):
     st.dataframe(df)
-
-
-
-
-
-
-
-
-
