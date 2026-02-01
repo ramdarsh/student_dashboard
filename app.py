@@ -10,26 +10,6 @@ st.set_page_config(
     layout="wide"
 )
 
-# ----------------------------------
-# MOBILE RESPONSIVE CSS
-# ----------------------------------
-st.markdown("""
-<style>
-@media (max-width: 768px) {
-    .block-container {
-        padding-left: 1rem;
-        padding-right: 1rem;
-    }
-    h1, h2, h3 {
-        font-size: 1.1rem !important;
-    }
-}
-[data-testid="stDataFrame"] {
-    overflow-x: auto;
-}
-</style>
-""", unsafe_allow_html=True)
-
 st.title("🎓 STUDENT AREA OF INTEREST DASHBOARD")
 
 # ----------------------------------
@@ -40,7 +20,6 @@ def load_data():
     return pd.read_csv("student_interests.csv")
 
 df = load_data()
-
 df["NAME"] = df["Name"].str.upper()
 
 INTEREST_COLUMNS = [
@@ -51,80 +30,50 @@ INTEREST_COLUMNS = [
 ]
 
 # ----------------------------------
-# FINAL NORMALIZATION MAP
+# NORMALIZATION MAP (FINAL)
 # ----------------------------------
 NORMALIZATION_MAP = {
-    # AI / ML
-    "Ai/ML": "AI/ML",
-    "AI/ml": "AI/ML",
-    "ai/ml": "AI/ML",
+    "Ai/ML": "AI/ML", "AI/ml": "AI/ML", "ai/ml": "AI/ML",
 
-    # CLOUD
-    "cloud computing": "CLOUD COMPUTING",
-    "Cloud computing": "CLOUD COMPUTING",
-    "DEVOPS": "CLOUD COMPUTING",
-    "Devops": "CLOUD COMPUTING",
-    "DEVOPS ENGINEER": "CLOUD COMPUTING",
+    "cloud computing": "CLOUD COMPUTING", "Cloud computing": "CLOUD COMPUTING",
+    "DEVOPS": "CLOUD COMPUTING", "DEVOPS ENGINEER": "CLOUD COMPUTING",
     "CLOUD ENGINEER": "CLOUD COMPUTING",
 
-    # CYBER
-    "Cyber security": "CYBER SECURITY",
-    "CYBER SECURITY": "CYBER SECURITY",
+    "Cyber security": "CYBER SECURITY", "CYBER SECURITY": "CYBER SECURITY",
 
-    # WEB
-    "Web developer": "WEB DEVELOPMENT",
-    "WEB DEVELOPER": "WEB DEVELOPMENT",
-    "FRONTEND": "WEB DEVELOPMENT",
-    "FRONTEND DEVELOPER": "WEB DEVELOPMENT",
-    "BACKEND": "WEB DEVELOPMENT",
-    "BACKEND DEVELOPER": "WEB DEVELOPMENT",
+    "Web developer": "WEB DEVELOPMENT", "WEB DEVELOPER": "WEB DEVELOPMENT",
+    "FRONTEND": "WEB DEVELOPMENT", "BACKEND": "WEB DEVELOPMENT",
     "FULL STACK": "WEB DEVELOPMENT",
-    "FULL STACK DEVELOPER": "WEB DEVELOPMENT",
     "FRONTEND OR BACKEND DEVELOPER": "WEB DEVELOPMENT",
 
-    # GAME
-    "Game developer": "GAME DEVELOPMENT",
-    "GAME DEVELOPER": "GAME DEVELOPMENT",
-    "Game Designer": "GAME DEVELOPMENT",
-    "GAME DESIGNER": "GAME DEVELOPMENT",
+    "Game developer": "GAME DEVELOPMENT", "Game Designer": "GAME DEVELOPMENT",
 
-    # DATA
-    "Data analyst": "DATA ANALYTICS",
-    "Data Analyst": "DATA ANALYTICS",
-    "DATA ANALYST": "DATA ANALYTICS",
-    "Data analytics": "DATA ANALYTICS",
+    "Data analyst": "DATA ANALYTICS", "DATA ANALYST": "DATA ANALYTICS",
     "DATA ANALYTICS": "DATA ANALYTICS",
     "Data scientist": "DATA ANALYTICS / AI",
-    "DATA SCIENTIST": "DATA ANALYTICS / AI",
 
-    # SOFTWARE DEV
-    "SDE": "SOFTWARE DEVELOPMENT",
-    "JR SDE": "SOFTWARE DEVELOPMENT",
-    "Jr SDE": "SOFTWARE DEVELOPMENT",
+    "SDE": "SOFTWARE DEVELOPMENT", "JR SDE": "SOFTWARE DEVELOPMENT",
     "SOFTWARE DEVELOPER": "SOFTWARE DEVELOPMENT",
     "SOFTWARE ENGINEER": "SOFTWARE DEVELOPMENT",
-    "SOFTWARE DEVELOPMENT ENGINEER": "SOFTWARE DEVELOPMENT",
 
-    # BIG DATA
-    "Big Data": "BIG DATA",
-    "BIG DATA": "BIG DATA"
+    "Big Data": "BIG DATA"
 }
 
 # ----------------------------------
-# BUILD STUDENT → INTEREST MAPPING
+# BUILD STUDENT → INTEREST TABLE
 # ----------------------------------
 rows = []
 
 for _, row in df.iterrows():
     interests = []
-
     for col in INTEREST_COLUMNS:
         value = str(row[col]) if pd.notna(row[col]) else ""
         for item in value.split(","):
             item = item.strip()
             if item:
-                item = NORMALIZATION_MAP.get(item, item).upper()
-                interests.append(item)
+                interests.append(
+                    NORMALIZATION_MAP.get(item, item).upper()
+                )
 
     rows.append({
         "NAME": row["NAME"],
@@ -137,93 +86,84 @@ student_interest_df = pd.DataFrame(rows)
 # INTEREST COUNTS
 # ----------------------------------
 all_interests = []
-
 for interests in student_interest_df["INTERESTS"]:
-    for i in interests.split(","):
-        all_interests.append(i.strip())
+    all_interests.extend([i.strip() for i in interests.split(",")])
 
 interest_counts = (
     pd.Series(all_interests)
     .value_counts()
     .reset_index()
 )
-
 interest_counts.columns = ["INTEREST", "STUDENT COUNT"]
 
 # ----------------------------------
-# SIDEBAR CONTROLS
+# SIDEBAR
 # ----------------------------------
 st.sidebar.header("FILTER OPTIONS")
 
 selected_interest = st.sidebar.selectbox(
     "SELECT ROLE / INTEREST",
-    options=["ALL"] + interest_counts["INTEREST"].tolist()
+    ["ALL"] + interest_counts["INTEREST"].tolist()
 )
 
 st.sidebar.divider()
 st.sidebar.markdown("### 📌 STUDENT COUNT BY INTEREST")
 
-for _, row in interest_counts.iterrows():
-    st.sidebar.metric(
-        label=row["INTEREST"],
-        value=row["STUDENT COUNT"]
-    )
-
-is_mobile = st.sidebar.toggle("MOBILE VIEW", value=False)
+for _, r in interest_counts.iterrows():
+    st.sidebar.metric(r["INTEREST"], r["STUDENT COUNT"])
 
 # ----------------------------------
-# METRICS
+# FILTER CHART DATA
 # ----------------------------------
-col1, col2 = st.columns(2)
-
-with col1:
-    st.metric("TOTAL STUDENTS", student_interest_df["NAME"].nunique())
-
-with col2:
-    st.metric("TOTAL UNIQUE INTERESTS", interest_counts["INTEREST"].nunique())
+chart_data = (
+    interest_counts if selected_interest == "ALL"
+    else interest_counts[interest_counts["INTEREST"] == selected_interest]
+)
 
 # ----------------------------------
-# CHART DATA
-# ----------------------------------
-chart_data = interest_counts if selected_interest == "ALL" else \
-    interest_counts[interest_counts["INTEREST"] == selected_interest]
-
-# ----------------------------------
-# CHARTS
+# FIXED LAYOUT CHARTS (DESKTOP SAFE)
 # ----------------------------------
 st.subheader("📊 INTEREST DISTRIBUTION")
 
-if is_mobile:
-    bar_container = st.container()
-    pie_container = st.container()
-else:
-    bar_container, pie_container = st.columns(2)
+col_bar, col_pie = st.columns([1.3, 1])
 
-with bar_container:
-    fig_bar = px.bar(
-        chart_data,
-        x="INTEREST",
-        y="STUDENT COUNT",
-        text="STUDENT COUNT",
-        title="STUDENT INTEREST COUNT"
-    )
-    fig_bar.update_layout(
-        xaxis_title="INTEREST",
-        yaxis_title="NUMBER OF STUDENTS",
-        xaxis_tickangle=-45
-    )
-    st.plotly_chart(fig_bar, use_container_width=True)
+# ---- BAR CHART (LAYOUT FIXED) ----
+fig_bar = px.bar(
+    chart_data,
+    x="INTEREST",
+    y="STUDENT COUNT",
+    text="STUDENT COUNT"
+)
 
-with pie_container:
-    fig_pie = px.pie(
-        interest_counts if selected_interest == "ALL" else chart_data,
-        names="INTEREST",
-        values="STUDENT COUNT",
-        title="ROLE DISTRIBUTION (PERCENTAGE)",
-        hole=0.4
-    )
-    fig_pie.update_traces(textinfo="percent+label")
-    st.plotly_chart(fig_pie, use_container_width=True)
+fig_bar.update_traces(textposition="outside")
+
+fig_bar.update_layout(
+    height=500,
+    margin=dict(l=40, r=40, t=40, b=140),
+    xaxis=dict(
+        title="INTEREST",
+        tickangle=-35,
+        tickfont=dict(size=11)
+    ),
+    yaxis=dict(title="NUMBER OF STUDENTS")
+)
+
+col_bar.plotly_chart(fig_bar, use_container_width=True)
+
+# ---- PIE CHART (STABLE SIZE) ----
+fig_pie = px.pie(
+    interest_counts,
+    names="INTEREST",
+    values="STUDENT COUNT",
+    hole=0.4
+)
+
+fig_pie.update_layout(
+    height=500,
+    margin=dict(l=20, r=20, t=40, b=20)
+)
+
+col_pie.plotly_chart(fig_pie, use_container_width=True)
 
 # ----------------------------------
 # STUDENT DETAILS
@@ -233,19 +173,10 @@ st.subheader("👨‍🎓 STUDENT DETAILS")
 if selected_interest == "ALL":
     st.info("SELECT A ROLE FROM THE SIDEBAR TO VIEW STUDENT DETAILS.")
 else:
-    filtered_students = student_interest_df[
-        student_interest_df["INTERESTS"].str.contains(selected_interest, case=False)
+    filtered = student_interest_df[
+        student_interest_df["INTERESTS"].str.contains(selected_interest)
     ]
-
-    st.write(
-        f"TOTAL STUDENTS INTERESTED IN {selected_interest}: {len(filtered_students)}"
-    )
-
-    st.dataframe(
-        filtered_students.reset_index(drop=True),
-        use_container_width=True,
-        height=300
-    )
+    st.dataframe(filtered, height=320, use_container_width=True)
 
 # ----------------------------------
 # RAW DATA
