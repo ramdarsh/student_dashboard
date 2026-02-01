@@ -33,39 +33,70 @@ INTEREST_COLUMNS = [
 # NORMALIZATION MAP (FINAL)
 # ----------------------------------
 NORMALIZATION_MAP = {
-    "Ai/ML": "AI/ML", "AI/ml": "AI/ML", "ai/ml": "AI/ML",
+    # AI / ML
+    "Ai/ML": "AI/ML",
+    "AI/ml": "AI/ML",
+    "ai/ml": "AI/ML",
 
-    "cloud computing": "CLOUD COMPUTING", "Cloud computing": "CLOUD COMPUTING",
-    "DEVOPS": "CLOUD COMPUTING", "DEVOPS ENGINEER": "CLOUD COMPUTING",
+    # CLOUD
+    "cloud computing": "CLOUD COMPUTING",
+    "Cloud computing": "CLOUD COMPUTING",
+    "DEVOPS": "CLOUD COMPUTING",
+    "Devops": "CLOUD COMPUTING",
+    "DEVOPS ENGINEER": "CLOUD COMPUTING",
     "CLOUD ENGINEER": "CLOUD COMPUTING",
 
-    "Cyber security": "CYBER SECURITY", "CYBER SECURITY": "CYBER SECURITY",
+    # CYBER
+    "Cyber security": "CYBER SECURITY",
+    "CYBER SECURITY": "CYBER SECURITY",
 
-    "Web developer": "WEB DEVELOPMENT", "WEB DEVELOPER": "WEB DEVELOPMENT",
-    "FRONTEND": "WEB DEVELOPMENT", "BACKEND": "WEB DEVELOPMENT",
+    # WEB
+    "Web developer": "WEB DEVELOPMENT",
+    "WEB DEVELOPER": "WEB DEVELOPMENT",
+    "FRONTEND": "WEB DEVELOPMENT",
+    "FRONTEND DEVELOPER": "WEB DEVELOPMENT",
+    "BACKEND": "WEB DEVELOPMENT",
+    "BACKEND DEVELOPER": "WEB DEVELOPMENT",
     "FULL STACK": "WEB DEVELOPMENT",
+    "FULL STACK DEVELOPER": "WEB DEVELOPMENT",
     "FRONTEND OR BACKEND DEVELOPER": "WEB DEVELOPMENT",
 
-    "Game developer": "GAME DEVELOPMENT", "Game Designer": "GAME DEVELOPMENT",
+    # GAME
+    "Game developer": "GAME DEVELOPMENT",
+    "GAME DEVELOPER": "GAME DEVELOPMENT",
+    "Game Designer": "GAME DEVELOPMENT",
+    "GAME DESIGNER": "GAME DEVELOPMENT",
 
-    "Data analyst": "DATA ANALYTICS", "DATA ANALYST": "DATA ANALYTICS",
+    # DATA
+    "Data analyst": "DATA ANALYTICS",
+    "Data Analyst": "DATA ANALYTICS",
+    "DATA ANALYST": "DATA ANALYTICS",
+    "Data analytics": "DATA ANALYTICS",
     "DATA ANALYTICS": "DATA ANALYTICS",
     "Data scientist": "DATA ANALYTICS / AI",
+    "DATA SCIENTIST": "DATA ANALYTICS / AI",
 
-    "SDE": "SOFTWARE DEVELOPMENT", "JR SDE": "SOFTWARE DEVELOPMENT",
+    # SOFTWARE DEVELOPMENT
+    "SDE": "SOFTWARE DEVELOPMENT",
+    "JR SDE": "SOFTWARE DEVELOPMENT",
+    "Jr SDE": "SOFTWARE DEVELOPMENT",
     "SOFTWARE DEVELOPER": "SOFTWARE DEVELOPMENT",
     "SOFTWARE ENGINEER": "SOFTWARE DEVELOPMENT",
+    "SOFTWARE DEVELOPMENT ENGINEER": "SOFTWARE DEVELOPMENT",
 
-    "Big Data": "BIG DATA"
+    # BIG DATA
+    "Big Data": "BIG DATA",
+    "BIG DATA": "BIG DATA"
 }
 
 # ----------------------------------
-# BUILD STUDENT → INTEREST TABLE
+# BUILD STUDENT → INTEREST MAPPING
 # ----------------------------------
 rows = []
 
 for _, row in df.iterrows():
     interests = []
+
     for col in INTEREST_COLUMNS:
         value = str(row[col]) if pd.notna(row[col]) else ""
         for item in value.split(","):
@@ -94,6 +125,7 @@ interest_counts = (
     .value_counts()
     .reset_index()
 )
+
 interest_counts.columns = ["INTEREST", "STUDENT COUNT"]
 
 # ----------------------------------
@@ -110,57 +142,73 @@ st.sidebar.divider()
 st.sidebar.markdown("### 📌 STUDENT COUNT BY INTEREST")
 
 for _, r in interest_counts.iterrows():
-    st.sidebar.metric(r["INTEREST"], r["STUDENT COUNT"])
+    st.sidebar.metric(
+        r["INTEREST"],
+        r["STUDENT COUNT"]
+    )
 
 # ----------------------------------
-# FILTER CHART DATA
+# TOP-N + OTHER (LAYOUT FIX)
 # ----------------------------------
-chart_data = (
-    interest_counts if selected_interest == "ALL"
-    else interest_counts[interest_counts["INTEREST"] == selected_interest]
-)
+TOP_N = 7
+
+top_interests = interest_counts.head(TOP_N)
+other_count = interest_counts.iloc[TOP_N:]["STUDENT COUNT"].sum()
+
+if other_count > 0:
+    other_row = pd.DataFrame([{
+        "INTEREST": "OTHER",
+        "STUDENT COUNT": other_count
+    }])
+    chart_counts = pd.concat([top_interests, other_row], ignore_index=True)
+else:
+    chart_counts = top_interests
 
 # ----------------------------------
-# FIXED LAYOUT CHARTS (DESKTOP SAFE)
+# CHARTS (FIXED & READABLE)
 # ----------------------------------
 st.subheader("📊 INTEREST DISTRIBUTION")
 
 col_bar, col_pie = st.columns([1.3, 1])
 
-# ---- BAR CHART (LAYOUT FIXED) ----
+# ---- HORIZONTAL BAR CHART ----
 fig_bar = px.bar(
-    chart_data,
-    x="INTEREST",
-    y="STUDENT COUNT",
-    text="STUDENT COUNT"
+    chart_counts,
+    x="STUDENT COUNT",
+    y="INTEREST",
+    text="STUDENT COUNT",
+    orientation="h",
+    title="TOP INTERESTS BY NUMBER OF STUDENTS"
+)
+
+fig_bar.update_layout(
+    height=500,
+    margin=dict(l=140, r=40, t=60, b=40),
+    xaxis=dict(title="NUMBER OF STUDENTS"),
+    yaxis=dict(title="INTEREST")
 )
 
 fig_bar.update_traces(textposition="outside")
 
-fig_bar.update_layout(
-    height=500,
-    margin=dict(l=40, r=40, t=40, b=140),
-    xaxis=dict(
-        title="INTEREST",
-        tickangle=-35,
-        tickfont=dict(size=11)
-    ),
-    yaxis=dict(title="NUMBER OF STUDENTS")
-)
-
 col_bar.plotly_chart(fig_bar, use_container_width=True)
 
-# ---- PIE CHART (STABLE SIZE) ----
+# ---- PIE CHART (CLEAN) ----
 fig_pie = px.pie(
-    interest_counts,
+    chart_counts,
     names="INTEREST",
     values="STUDENT COUNT",
-    hole=0.4
+    hole=0.4,
+    title="INTEREST SHARE (TOP CATEGORIES)"
 )
 
 fig_pie.update_layout(
     height=500,
-    margin=dict(l=20, r=20, t=40, b=20)
+    margin=dict(l=20, r=20, t=60, b=20),
+    legend=dict(
+        orientation="v",
+        x=1.05,
+        y=0.5
+    )
 )
 
 col_pie.plotly_chart(fig_pie, use_container_width=True)
@@ -176,7 +224,11 @@ else:
     filtered = student_interest_df[
         student_interest_df["INTERESTS"].str.contains(selected_interest)
     ]
-    st.dataframe(filtered, height=320, use_container_width=True)
+    st.dataframe(
+        filtered.reset_index(drop=True),
+        height=320,
+        use_container_width=True
+    )
 
 # ----------------------------------
 # RAW DATA
